@@ -1,16 +1,11 @@
 # coding=utf-8
-import requests
 from urllib import request
 import time
 import datetime
 import random
-import json
-import openpyxl
 import CoreMapApi
 from openpyxl import Workbook
-import collections
-import bidict
-
+from tqdm import tqdm
 
 
 
@@ -51,29 +46,33 @@ if __name__ == '__main__':
     opener.add_headers = [headers]
     request.install_opener(opener)
     endDate = datetime.datetime.now()+datetime.timedelta(days=-1)
-    types = ["move_in","move_out"]
+    #types = ["move_in","move_out"]
+    types = ["move_out"]
     index = 0
     city = "武汉"
     citys = []
     for item in CoreMapApi.AllName.values():
         citys.extend(item)
     dts = ["city",'province']
-    T = 1
+    T = 14
+    Date = datetime.datetime.strptime('20200110', '%Y%m%d')
+    DateList = [Date + datetime.timedelta(n) for n in range(T + 1)]
     for type in types:
-        for city in citys:
+        for city in tqdm(citys):
             column = 0
             row = 1
             ws = wb.create_sheet(title=city)
-            Date = datetime.datetime.strptime('20200110','%Y%m%d')
-            DateList = [Date + datetime.timedelta(n) for n in range(T + 1)]
             for D in DateList:
                 dt ='city'
-                result = CoreMapApi.MigratePost(dt,city,type,D)
-                write_migrate_book(ws=ws,result=result,column=column,row=row,Date=D)
+                try:
+                    result = CoreMapApi.MigratePost(dt,city,type,D)
+                    write_migrate_book(ws=ws,result=result,column=column,row=row,Date=D)
+                except:
+                    print(city)
                 column = column + 3
-                time.sleep(random.uniform(0.01,0.3))
-    print("完成")
-    wb.remove(wb['Sheet'])
-    dest_filename = './Data/migrate/'+ city +'_migrate_book.xlsx'
-    wb.save(dest_filename)
+                time.sleep(random.uniform(0.08,0.3))
+        print("完成")
+        wb.remove(wb['Sheet'])
+        dest_filename = './Data/migrate/'+type+'migrate_book.xlsx'
+        wb.save(dest_filename)
 
